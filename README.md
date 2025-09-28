@@ -10,7 +10,7 @@ A lightweight, cross-platform API testing application written in Go, inspired by
 - **Collections**: Organize your saved requests into collections
 - **Persistent Storage**: SQLite database for reliable data persistence
 - **Export/Import**: Export your request history to JSON for backup or sharing
-- **Modern GUI**: Built with Fyne framework for a native cross-platform experience
+- **Modern GUI**: Built with the Fyne framework for a native cross-platform experience
 - **Lightweight**: Single binary with minimal dependencies
 - **Fast**: Written in Go for optimal performance
 
@@ -24,7 +24,7 @@ A lightweight, cross-platform API testing application written in Go, inspired by
 ### Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/golem.git
+git clone https://github.com/wickeddoc/golem.git
 cd golem
 ```
 
