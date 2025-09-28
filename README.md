@@ -114,11 +114,6 @@ golem/
 
 ## Development
 
-### Running Tests
-```bash
-go test ./...
-```
-
 ### Updating Dependencies
 ```bash
 go mod tidy
