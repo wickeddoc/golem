@@ -76,10 +76,9 @@ go run main.go
    - Use the search bar to filter history
    - Export history to JSON for backup
 
-3. **Keyboard Shortcuts** (Coming Soon)
+3. **Keyboard Shortcuts**
    - `Ctrl+Enter`: Submit request
-   - `Ctrl+L`: Focus URL field
-   - `Ctrl+H`: Toggle history panel
+   - `F6`: Focus URL field
 
 ## Data Storage
 

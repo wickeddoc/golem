@@ -14,6 +14,7 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/widget"
 )
 
@@ -200,7 +201,8 @@ func main() {
 	}
 	historyPanel = ui.NewHistoryPanel(db, onRequestLoad, w)
 
-	submitButton := widget.NewButton("Submit", func() {
+	// Extract submit logic into a function for reuse
+	submitRequest := func() {
 		url := urlEntry.Text
 		method := methodDropdown.Selected
 
@@ -256,7 +258,9 @@ func main() {
 			// Add to history
 			historyPanel.AddToHistory(historyEntry)
 		}()
-	})
+	}
+
+	submitButton := widget.NewButton("Submit", submitRequest)
 
 	topBar := container.NewBorder(
 		nil,
@@ -288,6 +292,36 @@ func main() {
 	content.SetOffset(0.3) // History panel takes 30% of the width
 
 	w.SetContent(content)
+
+	// Set up keyboard shortcuts using desktop.CustomShortcut
+	ctrlEnterShortcut := &desktop.CustomShortcut{
+		KeyName:  fyne.KeyReturn,
+		Modifier: fyne.KeyModifierControl,
+	}
+	w.Canvas().AddShortcut(ctrlEnterShortcut, func(shortcut fyne.Shortcut) {
+		submitRequest()
+	})
+
+	// Also support Ctrl+Enter with the Enter key (numpad)
+	ctrlEnterNumpad := &desktop.CustomShortcut{
+		KeyName:  fyne.KeyEnter,
+		Modifier: fyne.KeyModifierControl,
+	}
+	w.Canvas().AddShortcut(ctrlEnterNumpad, func(shortcut fyne.Shortcut) {
+		submitRequest()
+	})
+
+	// F6: Focus URL field (like browsers)
+	w.Canvas().SetOnTypedKey(func(key *fyne.KeyEvent) {
+		if key.Name == fyne.KeyF6 {
+			// Move cursor to end of text first
+			urlEntry.CursorColumn = len([]rune(urlEntry.Text))
+			urlEntry.Refresh()
+			// Then focus the entry
+			w.Canvas().Focus(urlEntry)
+		}
+	})
+
 	w.Resize(fyne.NewSize(prefs.WindowWidth, prefs.WindowHeight))
 	w.ShowAndRun()
 }
