@@ -109,7 +109,7 @@ func (hp *HistoryPanel) createUI() {
 		}
 	}
 
-	clearButton := widget.NewButton("Clear History", func() {
+	clearButton := widget.NewButtonWithIcon("Clear History", theme.ContentClearIcon(), func() {
 		dialog.ShowConfirm("Clear History",
 			"Are you sure you want to clear all request history?",
 			func(confirmed bool) {
@@ -119,7 +119,7 @@ func (hp *HistoryPanel) createUI() {
 			}, hp.parentWindow)
 	})
 
-	exportButton := widget.NewButton("Export", func() {
+	exportButton := widget.NewButtonWithIcon("Export", theme.DownloadIcon(), func() {
 		dialog.ShowFileSave(func(writer fyne.URIWriteCloser, err error) {
 			if err != nil {
 				dialog.ShowError(err, hp.parentWindow)

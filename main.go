@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"golem/storage"
 	"golem/ui"
+	"image/color"
 	"io"
 	"net/http"
 	"strconv"
@@ -12,9 +13,11 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/driver/desktop"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
 
@@ -140,7 +143,7 @@ func main() {
 	}
 	defer db.Close()
 
-	// Load preferences from database
+	// Load preferences from the database
 	prefs := loadPreferencesFromDB(db)
 
 	// Set a window close handler to save preferences
@@ -176,7 +179,7 @@ func main() {
 		savePreferencesToDB(db, prefs)
 	}
 
-	statusLabel := widget.NewLabel("Status: -")
+	statusLabel := canvas.NewText("Status: -", color.White)
 	sizeLabel := widget.NewLabel("Size: -")
 	timeLabel := widget.NewLabel("Time: -")
 
@@ -193,7 +196,7 @@ func main() {
 	responseScroll := container.NewScroll(responseArea)
 	responseScroll.SetMinSize(fyne.NewSize(600, 400))
 
-	// Create history panel
+	// Create a history panel
 	var historyPanel *ui.HistoryPanel
 	onRequestLoad := func(url, method string) {
 		urlEntry.SetText(url)
@@ -208,21 +211,25 @@ func main() {
 
 		if url == "" {
 			responseArea.SetText("Error: Please enter a URL")
-			statusLabel.SetText("Status: Error")
+			statusLabel.Text = "Status: Error"
+			statusLabel.Color = color.RGBA{R: 255, G: 0, B: 0, A: 255} // Red
+			statusLabel.Refresh()
 			sizeLabel.SetText("Size: -")
 			timeLabel.SetText("Time: -")
 			return
 		}
 
 		responseArea.SetText("Loading...")
-		statusLabel.SetText("Status: Loading...")
+		statusLabel.Text = "Status: Loading..."
+		statusLabel.Color = color.White
+		statusLabel.Refresh()
 		sizeLabel.SetText("Size: -")
 		timeLabel.SetText("Time: -")
 
 		go func() {
 			response, err := executeRequest(method, url)
 
-			// Create history entry
+			// Create a history entry
 			historyEntry := &storage.RequestHistory{
 				URL:       url,
 				Method:    method,
@@ -233,9 +240,11 @@ func main() {
 				historyEntry.ResponseStatus = "Error"
 				responseText := fmt.Sprintf("Error: %v", err)
 
-				// Use main thread for UI updates
+				// Use the main thread for UI updates
 				responseArea.SetText(responseText)
-				statusLabel.SetText("Status: Error")
+				statusLabel.Text = "Status: Error"
+				statusLabel.Color = color.RGBA{R: 255, G: 0, B: 0, A: 255} // Red
+				statusLabel.Refresh()
 				sizeLabel.SetText("Size: -")
 				timeLabel.SetText("Time: -")
 			} else {
@@ -248,9 +257,27 @@ func main() {
 				headersJSON, _ := json.Marshal(response.Headers)
 				historyEntry.ResponseHeaders = string(headersJSON)
 
-				// Use main thread for UI updates
+				// Use the main thread for UI updates
 				responseArea.SetText(response.Body)
-				statusLabel.SetText(fmt.Sprintf("Status: %s", response.Status))
+				statusLabel.Text = fmt.Sprintf("Status: %s", response.Status)
+
+				// Set color based on status code
+				if len(response.Status) > 0 {
+					switch response.Status[0] {
+					case '2':
+						statusLabel.Color = color.RGBA{R: 0, G: 200, B: 0, A: 255} // Green
+					case '3':
+						statusLabel.Color = color.RGBA{R: 0, G: 100, B: 255, A: 255} // Blue
+					case '4':
+						statusLabel.Color = color.RGBA{R: 255, G: 165, B: 0, A: 255} // Orange
+					case '5':
+						statusLabel.Color = color.RGBA{R: 255, G: 0, B: 0, A: 255} // Red
+					default:
+						statusLabel.Color = color.White
+					}
+				}
+				statusLabel.Refresh()
+
 				sizeLabel.SetText(fmt.Sprintf("Size: %d bytes", response.Size))
 				timeLabel.SetText(fmt.Sprintf("Time: %.2f ms", float64(response.ResponseTime.Milliseconds())))
 			}
@@ -260,7 +287,8 @@ func main() {
 		}()
 	}
 
-	submitButton := widget.NewButton("Submit", submitRequest)
+	submitButton := widget.NewButtonWithIcon("Submit", theme.MediaPlayIcon(), submitRequest)
+	submitButton.Importance = widget.HighImportance
 
 	topBar := container.NewBorder(
 		nil,
@@ -284,7 +312,7 @@ func main() {
 		responseScroll,
 	)
 
-	// Create split container with history panel on the left
+	// Create a split container with the history panel on the left
 	content := container.NewHSplit(
 		historyPanel.GetContainer(),
 		mainContent,
@@ -311,13 +339,22 @@ func main() {
 		submitRequest()
 	})
 
+	// Ctrl+Q: Quit application
+	ctrlQShortcut := &desktop.CustomShortcut{
+		KeyName:  fyne.KeyQ,
+		Modifier: fyne.KeyModifierControl,
+	}
+	w.Canvas().AddShortcut(ctrlQShortcut, func(shortcut fyne.Shortcut) {
+		w.Close()
+	})
+
 	// F6: Focus URL field (like browsers)
 	w.Canvas().SetOnTypedKey(func(key *fyne.KeyEvent) {
 		if key.Name == fyne.KeyF6 {
-			// Move cursor to end of text first
+			// Move the cursor to the end of the text first
 			urlEntry.CursorColumn = len([]rune(urlEntry.Text))
 			urlEntry.Refresh()
-			// Then focus the entry
+			// Then focus on the entry
 			w.Canvas().Focus(urlEntry)
 		}
 	})
